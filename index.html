@@ -327,3 +327,89 @@
                     <div class="item-info">
                         <div class="item-title">Видео-инструкция</div>
                         <div class="item-desc">Повторяй за роликом шаг за шаг...</div>
+</div>
+                <button class="pill-btn" onclick="showAlert('Видео-инструкция скоро будет добавлена!')">Смотреть</button>
+            </div>
+        </div>
+
+        <div class="footer-note">Сегодня осталось сборок: 2 из 2. Черновик сохраняется: можно закрыть и вернуться.</div>
+
+        <button class="main-btn" onclick="goToStep(1)">Начать</button>
+    `;
+}
+
+function goToStep(step) {
+    currentStep = step;
+    const data = stepsData[step];
+    const savedValue = answers[data.key] || '';
+    const progressPercent = (step / 6) * 100;
+
+    const app = document.getElementById('app');
+    app.innerHTML = `
+        <div class="step-header">
+            <div class="step-counter">ШАГ ${step} ИЗ 6</div>
+            <div style="font-size: 20px;">${data.icon}</div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: ${progressPercent}%"></div>
+        </div>
+
+        <h1>${data.title}</h1>
+        <div class="subtitle">${data.desc}</div>
+
+        <div class="input-group">
+            <label class="input-label">${data.label}</label>
+            <input type="text" id="main-input" class="text-input" placeholder="${data.placeholder}" value="${savedValue}">
+        </div>
+
+        <button class="main-btn" onclick="handleNext()">${step === 6 ? 'Завершить сборку' : 'Далее'}</button>
+        <button class="back-btn" onclick="${step === 1 ? 'renderHome()' : `goToStep(${step - 1})`}">← Назад</button>
+    `;
+}
+
+function handleNext() {
+    const input = document.getElementById('main-input');
+    const val = input ? input.value.trim() : '';
+
+    if (!val) {
+        showAlert('Пожалуйста, заполните поле перед продолжением!');
+        return;
+    }
+
+    const currentKey = stepsData[currentStep].key;
+    answers[currentKey] = val;
+
+    if (currentStep < 6) {
+        goToStep(currentStep + 1);
+    } else {
+        finishBuild();
+    }
+}
+
+function finishBuild() {
+    if (tg && tg.sendData) {
+        tg.sendData(JSON.stringify(answers));
+    }
+    const app = document.getElementById('app');
+    app.innerHTML = `
+        <div style="text-align: center; margin: auto 0;">
+            <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+            <h1>Заявка отправлена!</h1>
+            <div class="subtitle">Бот начал установку мода на ваш сервер <b>${answers.ip}</b>. Ожидайте сообщение в чате.</div>
+            <button class="main-btn" onclick="renderHome()">На главную</button>
+        </div>
+    `;
+}
+
+function showAlert(msg) {
+    if (tg && tg.showAlert) {
+        tg.showAlert(msg);
+    } else {
+        alert(msg);
+    }
+}
+
+renderHome();
+</script>
+</body>
+</html>
