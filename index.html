@@ -172,12 +172,44 @@
     tg.MainButton.setParams({ color: '#ffffff', text_color: '#000000' });
     tg.MainButton.show();
 
-    tg.MainButton.onClick(() => {
-      if (currentStep === 0) {
-        goToStep(1);
+ function goToStep(step) {
+    currentStep = step;
+    const data = stepsData[step];
+    const container = document.querySelector('.container') || document.body;
+
+    container.innerHTML = `
+      <div style="padding: 20px; color: #fff; font-family: sans-serif;">
+        <div style="color: #8e8e93; font-size: 13px; margin-bottom: 8px;">Шаг ${step} из 6</div>
+        <h2 style="margin: 0 0 8px 0; font-size: 22px;">${data.icon} ${data.title}</h2>
+        <p style="color: #8e8e93; font-size: 14px; margin: 0 0 20px 0;">${data.desc}</p>
+        <label style="display: block; font-size: 13px; color: #aaa; margin-bottom: 8px;">${data.label}</label>
+        <input id="main-input" type="text" placeholder="${data.placeholder}" value="${answers[data.key] || ''}"
+          style="width: 100%; box-sizing: border-box; padding: 14px; border-radius: 12px; border: 1px solid #2c2c2e; background: #1c1c1e; color: #fff; font-size: 16px; outline: none;">
+      </div>
+    `;
+
+    tg.MainButton.setText(step === 6 ? 'Завершить сборку' : 'Далее');
+  }
+
+  tg.MainButton.onClick(() => {
+    if (currentStep === 0) {
+      goToStep(1);
+    } else {
+      const val = document.getElementById('main-input').value.trim();
+      if (!val) {
+        tg.showAlert('Пожалуйста, заполните поле перед продолжением!');
+        return;
+      }
+      answers[stepsData[currentStep].key] = val;
+
+      if (currentStep < 6) {
+        goToStep(currentStep + 1);
       } else {
-        const val = document.getElementById('main-input').value.trim();
-        if (!val) {
-          tg.showAlert('Пожалуйста, заполните поле перед продолжением!');
-          return;
-        }
+        tg.sendData(JSON.stringify(answers));
+        tg.close();
+      }
+    }
+  });
+</script>
+</body>
+</html>
