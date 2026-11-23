@@ -377,8 +377,12 @@ function handleNext() {
     }
 
     const currentKey = stepsData[currentStep].key;
-    answers[currentKey] = val;
+    if (currentKey === 'ip' && !/^[a-zA-Z0-9.-]+:\d{1,5}$/.test(val)) {
+    showAlert('Ошибка! Укажите адрес и порт через двоеточие (например: 178.130.53.95:1497)');
+    return;
+}
 
+    answers[currentKey] = val; 
     if (currentStep < 6) {
         goToStep(currentStep + 1);
     } else {
