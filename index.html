@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Конструктор сервера</title>
+  <script src="https://telegram.org"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: #09090b; color: #ffffff; padding: 16px 16px 90px; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .gold-label { color: #e5a93c; font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px; }
+    h1 { font-size: 28px; font-weight: 800; line-height: 1.15; margin-bottom: 10px; }
+    .subtitle { color: #9ca3af; font-size: 14px; line-height: 1.4; margin-bottom: 18px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); background: #151518; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 14px 8px; text-align: center; margin-bottom: 20px; }
+    .stat-item:not(:last-child) { border-right: 1px solid rgba(255,255,255,0.07); }
+    .stat-val { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+    .stat-lbl { font-size: 12px; color: #71717a; }
+    .section-title { font-size: 13px; color: #71717a; margin-bottom: 10px; }
+    .card { background: #151518; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+    .row { display: flex; align-items: center; gap: 12px; }
+    .row:not(:last-child) { padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .icon-box { width: 38px; height: 38px; border-radius: 10px; background: rgba(229, 169, 60, 0.12); color: #e5a93c; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .item-info { flex: 1; }
+    .item-title { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+    .item-desc { font-size: 12px; color: #71717a; }
+    .pill-btn { background: #27272a; color: #e4e4e7; border: none; padding: 7px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .pill-btn.white { background: #ffffff; color: #000000; }
+    .note { font-size: 12px; color: #71717a; line-height: 1.4; margin-top: 14px; }
+
+    /* Экран шагов */
+    .top-banner { background: linear-gradient(135deg, #42310d 0%, #1c1810 100%); border: 1px solid rgba(229, 169, 60, 0.35); border-radius: 16px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .banner-left { display: flex; align-items: center; gap: 12px; }
+    .avatar-o { width: 36px; height: 36px; border-radius: 10px; background: rgba(229, 169, 60, 0.18); color: #e5a93c; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .banner-title { font-size: 14px; font-weight: 700; text-transform: uppercase; }
+    .banner-sub { font-size: 12px; color: #d4af37; font-family: monospace; margin-top: 2px; }
+    .step-badge { background: rgba(0,0,0,0.4); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; color: #e5a93c; }
+    .progress-bar { display: flex; gap: 6px; margin-bottom: 20px; }
+    .prog-seg { flex: 1; height: 3px; border-radius: 2px; background: #27272a; }
+    .prog-seg.done { background: #e5a93c; }
+    .step-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .step-count { font-size: 12px; color: #71717a; }
+    .req-badge { background: rgba(229, 169, 60, 0.15); color: #e5a93c; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 12px; }
+    .input-wrap { display: flex; align-items: center; gap: 10px; }
+    .input-box { flex: 1; }
+    .input-lbl { font-size: 11px; color: #71717a; margin-bottom: 4px; }
+    input { width: 100%; background: transparent; border: none; color: #ffffff; font-size: 15px; font-family: monospace; outline: none; }
+    input::placeholder { color: #52525b; }
+  </style>
+</head>
+<body>
+
+  <!-- ЭКРАН 0: ПРИВЕТСТВИЕ -->
+  <div id="screen-welcome" class="screen active">
+    <div class="gold-label">БЕСПЛАТНО • БЕЗ ПК</div>
+    <h1>Своя Блек Раша<br>за 5 минут</h1>
+    <div class="subtitle">Ответь на 6 вопросов — бот сам зальёт мод на хостинг, настроит базу и пришлёт файл для приложения.</div>
+
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-val">6</div><div class="stat-lbl">шагов</div></div>
+      <div class="stat-item"><div class="stat-val">~5 мин</div><div class="stat-lbl">на всё</div></div>
+      <div class="stat-item"><div class="stat-val">0 ₽</div><div class="stat-lbl">за сборку</div></div>
+    </div>
+
+    <div class="section-title">Подготовь заранее</div>
+    <div class="card">
+      <div class="row">
+        <div class="icon-box">🗄️</div>
+        <div class="item-info">
+          <div class="item-title">Сервер на хостинге</div>
+          <div class="item-desc">Адрес с портом из панели</div>
+        </div>
+        <button class="pill-btn" onclick="alert('Купите игровой хостинг SAMP/CRMP и скопируйте IP:PORT')">Нет сервера</button>
+      </div>
+      <div class="row">
+        <div class="icon-box">⬆️</div>
+        <div class="item-info">
+          <div class="item-title">Доступы FTP и MySQL</div>
+          <div class="item-desc">Разделы «FTP» и «Базы данных»</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="icon-box">👤</div>
+        <div class="item-info">
+          <div class="item-title">Свой ник в игре</div>
+          <div class="item-desc">В формате Имя_Фамилия</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div class="icon-box">▶️</div>
+        <div class="item-info">
+          <div class="item-title">Видео-инструкция</div>
+          <div class="item-desc">Повторяй за роликом шаг за шаг...</div>
+        </div>
+        <button class="pill-btn white" onclick="alert('Здесь можно вставить ссылку на ваш YouTube/Telegram ролик')">Смотреть</button>
+      </div>
+    </div>
+
+    <div class="note">Сегодня осталось сборок: 2 из 2. Черновик сохраняется: можно закрыть и вернуться.</div>
+  </div>
+
+  <!-- ЭКРАН ШАГОВ (1-6) -->
+  <div id="screen-steps" class="screen">
+    <div class="top-banner">
+      <div class="banner-left">
+        <div class="avatar-o" id="banner-letter">S</div>
+        <div>
+          <div class="banner-title" id="banner-name">МОЙ ПРОЕКТ</div>
+          <div class="banner-sub" id="banner-ip">0.0.0.0:7777</div>
+        </div>
+      </div>
+      <div class="step-badge" id="badge-step">1/6</div>
+    </div>
+
+    <div class="progress-bar" id="progress-bar">
+      <div class="prog-seg done"></div><div class="prog-seg"></div><div class="prog-seg"></div>
+      <div class="prog-seg"></div><div class="prog-seg"></div><div class="prog-seg"></div>
+    </div>
+
+    <div class="step-header">
+      <span class="step-count" id="step-count-text">Шаг 1 из 6</span>
+      <span class="req-badge">• Нужно</span>
+    </div>
+    <h1 id="step-title">Сервер</h1>
+    <div class="subtitle" id="step-desc">Куда будут подключаться игроки</div>
+
+    <div class="card">
+      <div class="input-wrap">
+        <div class="icon-box" id="step-icon">🗄️</div>
+        <div class="input-box">
+          <div class="input-lbl" id="input-label">Адрес сервера с портом</div>
+          <input type="text" id="main-input" placeholder="178.130.53.95:1497" oninput="updateLiveBanner()" />
+        </div>
+        <button class="pill-btn white" id="check-btn" onclick="checkServer()">Проверить</button>
+      </div>
+    </div>
+
+    <div class="card" onclick="alert('Откройте панель управления вашим игровым хостингом и скопируйте IP-адрес вместе с портом.')">
+      <div class="row" style="padding:0; margin:0; border:none;">
+        <div class="icon-box" style="background:#27272a; color:#a1a1aa;">?</div>
+        <div class="item-info"><div class="item-title" style="font-size:14px;">Где взять данные</div></div>
+      </div>
+   function goToStep(step) {
+    currentStep = step;
+    const data = stepsData[step];
+    const container = document.querySelector('.container') || document.body;
+
+    container.innerHTML = `
+      <div style="padding: 20px; color: #fff; font-family: sans-serif;">
+        <div style="color: #8e8e93; font-size: 13px; margin-bottom: 8px;">Шаг ${step} из 6</div>
+        <h2 style="margin: 0 0 8px 0; font-size: 22px;">${data.icon} ${data.title}</h2>
+        <p style="color: #8e8e93; font-size: 14px; margin: 0 0 20px 0;">${data.desc}</p>
+        <label style="display: block; font-size: 13px; color: #aaa; margin-bottom: 8px;">${data.label}</label>
+        <input id="main-input" type="text" placeholder="${data.placeholder}" value="${answers[data.key] || ''}"
+          style="width: 100%; box-sizing: border-box; padding: 14px; border-radius: 12px; border: 1px solid #2c2c2e; background: #1c1c1e; color: #fff; font-size: 16px; outline: none;">
+      </div>
+    `;
+
+    tg.MainButton.setText(step === 6 ? 'Завершить сборку' : 'Далее');
+  }
+
+  tg.MainButton.onClick(() => {
+    if (currentStep === 0) {
+      goToStep(1);
+    } else {
+      const val = document.getElementById('main-input').value.trim();
+      if (!val) {
+                tg.showAlert('Пожалуйста, заполните поле перед продолжением!');
+                return;
+            }
+    let currentStep = 0; // 0 = приветствие, 1..6 = шаги
+    const answers = {};
+
+    const stepsData = [
+      null,
+      { key: 'ip', title: 'Сервер', desc: 'Куда будут подключаться игроки', label: 'Адрес сервера с портом', placeholder: '178.130.53.95:1497', icon: '🗄️', showCheck: true },
+      { key: 'project', title: 'Название проекта', desc: 'Отобразится в клиенте и на баннере', label: 'Название (на английском)', placeholder: 'OLD RUSSIA', icon: '🏷️', showCheck: false },
+      { key: 'ftp_host', title: 'Доступ FTP', desc: 'Для автоматической заливки мода', label: 'FTP Хост / Логин / Пароль', placeholder: 'ftp.host.ru:user:pass', icon: '⬆️', showCheck: false },
+      { key: 'mysql', title: 'База данных MySQL', desc: 'Для импорта таблиц аккаунтов', label: 'Host / DB / User / Pass', placeholder: 'localhost:db:user:pass', icon: '💾', showCheck: false },
+      { key: 'nick', title: 'Ваш ник в игре', desc: 'Выдадим права основателя сервера', label: 'Ник в формате Имя_Фамилия', placeholder: 'Ivan_Ivanov', icon: '👤', showCheck: false },
+      { key: 'build', title: 'Выбор сборки', desc: 'Какой мод установить на сервер', label: 'Название сборки', placeholder: 'Базовая сборка CRMP', icon: '📦', showCheck: false }
+    ];
+
+    tg.MainButton.setText('Начать');
+    tg.MainButton.setParams({ color: '#ffffff', text_color: '#000000' });
+    tg.MainButton.show();
+
+ function goToStep(step) {
+    currentStep = step;
+    const data = stepsData[step];
+    const container = document.querySelector('.container') || document.body;
+
+    container.innerHTML = `
+      <div style="padding: 20px; color: #fff; font-family: sans-serif;">
+        <div style="color: #8e8e93; font-size: 13px; margin-bottom: 8px;">Шаг ${step} из 6</div>
+        <h2 style="margin: 0 0 8px 0; font-size: 22px;">${data.icon} ${data.title}</h2>
+        <p style="color: #8e8e93; font-size: 14px; margin: 0 0 20px 0;">${data.desc}</p>
+        <label style="display: block; font-size: 13px; color: #aaa; margin-bottom: 8px;">${data.label}</label>
+        <input id="main-input" type="text" placeholder="${data.placeholder}" value="${answers[data.key] || ''}"
+          style="width: 100%; box-sizing: border-box; padding: 14px; border-radius: 12px; border: 1px solid #2c2c2e; background: #1c1c1e; color: #fff; font-size: 16px; outline: none;">
+      </div>
+    `;
+
+    tg.MainButton.setText(step === 6 ? 'Завершить сборку' : 'Далее');
+  }
+
+  tg.MainButton.onClick(() => {
+    if (currentStep === 0) {
+      goToStep(1);
+    } else {
+      const val = document.getElementById('main-input').value.trim();
+      if (!val) {
+        tg.showAlert('Пожалуйста, заполните поле перед продолжением!');
+        return;
+      }
+      answers[stepsData[currentStep].key] = val;
+
+      if (currentStep < 6) {
+        goToStep(currentStep + 1);
+      } else {
+        tg.sendData(JSON.stringify(answers));
+        tg.close();
+      }
+    }
+  });
+</script>
+</body>
+</html>
